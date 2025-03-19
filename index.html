@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>بازی موانع</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css">
+    <style>
+        /* Reset CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Vazir, sans-serif;
+        }
+
+        body {
+            direction: rtl;
+            text-align: center;
+            font-family: 'Vazir', Arial, sans-serif; /* فونت Vazir برای کل سایت */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            touch-action: none; /* جلوگیری از زوم */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background-image: url('https://s33.picofile.com/file/8483483326/export202503191719321462.png'); /* تغییر پس‌زمینه به عکس مورد نظر */
+            background-size: cover; /* تنظیم اندازه عکس به اندازه صفحه */
+            background-position: center; /* تنظیم موقعیت عکس در مرکز صفحه */
+        }
+
+        #character {
+            position: absolute;
+            bottom: 120px; /* شخصیت به پایین صفحه منتقل شد و ۲۰ پیکسل فاصله گرفت */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background-image: url('https://s33.picofile.com/file/8483483342/Picsart_25_03_19_20_04_17_200.png');
+            background-size: cover;
+        }
+
+        .obstacle {
+            position: absolute;
+            width: 50px;
+            height: 90px;
+            background-size: cover;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            color: #ffffff;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1000; /* دیالوگ باخت جلوی همه چیز */
+        }
+
+        #restart-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* استایل فوتر */
+        #footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #C6C6FF;
+            padding: 10px;
+            text-align: center;
+            font-family: 'Vazir', Arial, sans-serif; /* فونت Vazir برای فوتر */
+            border-top: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #footer img {
+            width: 20px; /* اندازه لوگو */
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        #footer p {
+            margin: 0;
+            font-size: 14px;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="character"></div>
+        <div id="score">امتیاز: 0</div>
+        <div id="game-over">
+            <p>شما برخورد کردید!</p>
+            <p id="final-score">امتیاز شما: 0</p>
+            <button id="restart-button">شروع مجدد</button>
+        </div>
+    </div>
+
+    <!-- فوتر -->
+    <div id="footer">
+        <p>حقوق محفوظ است</p> 
+        <img src="https://s33.picofile.com/file/8483389992/Picsart_25_03_12_05_24_26_172.jpg" alt="لوگو">
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const character = document.getElementById('character');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverDisplay = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        let score = 0;
+        let gameInterval;
+        let obstacleInterval;
+        let isGameOver = false;
+        let obstacleSpeed = 5; // سرعت اولیه موانع
+
+        const obstacleImages = [
+            'https://s33.picofile.com/file/8483483250/IMG_%DB%B2%DB%B0%DB%B2%DB%B5%DB%B0%DB%B3%DB%B1%DB%B9_%DB%B1%DB%B9%DB%B1%DB%B5%DB%B3%DB%B7.png',
+            'https://s33.picofile.com/file/8483483268/IMG_%DB%B2%DB%B0%DB%B2%DB%B5%DB%B0%DB%B3%DB%B1%DB%B9_%DB%B1%DB%B9%DB%B3%DB%B5%DB%B4%DB%B1.png',
+            'https://s33.picofile.com/file/8483483276/IMG_%DB%B2%DB%B0%DB%B2%DB%B5%DB%B0%DB%B3%DB%B1%DB%B9_%DB%B1%DB%B9%DB%B5%DB%B1%DB%B3%DB%B0.png'
+        ];
+
+        function startGame() {
+            score = 0;
+            isGameOver = false;
+            obstacleSpeed = 5; // بازنشانی سرعت موانع
+            gameOverDisplay.style.display = 'none';
+            scoreDisplay.textContent = `امتیاز: ${score}`;
+            character.style.left = '50%';
+
+            gameInterval = setInterval(updateGame, 100); // هر ۱۰۰ میلی‌ثانیه ۱ امتیاز
+            obstacleInterval = setInterval(createObstacle, 1000);
+        }
+
+        function updateGame() {
+            if (isGameOver) return;
+
+            score++;
+            scoreDisplay.textContent = `امتیاز: ${score}`;
+
+            // افزایش سرعت موانع بر اساس امتیاز
+            if (score === 200) {
+                obstacleSpeed *= 2; // افزایش ۲۰ درصدی سرعت
+            } else if (score === 500) {
+                obstacleSpeed *= 2; // افزایش ۲۰ درصدی دیگر
+            }
+        }
+
+        function createObstacle() {
+            if (isGameOver) return;
+
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            obstacle.style.left = `${Math.random() * (gameContainer.offsetWidth - 50)}px`;
+            obstacle.style.top = '0';
+            obstacle.style.backgroundImage = `url('${obstacleImages[Math.floor(Math.random() * obstacleImages.length)]}')`;
+            gameContainer.appendChild(obstacle);
+
+            moveObstacle(obstacle);
+        }
+
+        function moveObstacle(obstacle) {
+            const obstacleInterval = setInterval(() => {
+                if (isGameOver) {
+                    clearInterval(obstacleInterval);
+                    return;
+                }
+
+                const obstacleTop = parseInt(obstacle.style.top, 10);
+                obstacle.style.top = `${obstacleTop + obstacleSpeed}px`;
+
+                if (obstacleTop > gameContainer.offsetHeight) {
+                    obstacle.remove(); // حذف مانع خارج شده از صفحه
+                    clearInterval(obstacleInterval);
+                }
+
+                if (checkCollision(character, obstacle)) {
+                    gameOver();
+                }
+            }, 20);
+        }
+
+        function checkCollision(character, obstacle) {
+            const characterRect = character.getBoundingClientRect();
+            const obstacleRect = obstacle.getBoundingClientRect();
+
+            return !(
+                characterRect.top > obstacleRect.bottom ||
+                characterRect.bottom < obstacleRect.top ||
+                characterRect.left > obstacleRect.right ||
+                characterRect.right < obstacleRect.left
+            );
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            clearInterval(gameInterval);
+            clearInterval(obstacleInterval);
+            finalScoreDisplay.textContent = `امتیاز شما: ${score}`;
+            gameOverDisplay.style.display = 'block';
+        }
+
+        restartButton.addEventListener('click', () => {
+            document.querySelectorAll('.obstacle').forEach(obstacle => obstacle.remove());
+            startGame();
+        });
+
+        gameContainer.addEventListener('touchmove', (e) => {
+            if (isGameOver) return;
+
+            const touch = e.touches[0];
+            const newPosition = touch.clientX - (character.offsetWidth / 2);
+
+            if (newPosition >= 0 && newPosition <= gameContainer.offsetWidth - character.offsetWidth) {
+                character.style.left = `${newPosition}px`;
+            }
+        });
+
+        // توقف بازی هنگام خروج از صفحه
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(gameInterval);
+                clearInterval(obstacleInterval);
+            } else {
+                if (!isGameOver) {
+                    gameInterval = setInterval(updateGame, 100);
+                    obstacleInterval = setInterval(createObstacle, 1000);
+                }
+            }
+        });
+
+        startGame();
+    </script>
+</body>
+</html>
