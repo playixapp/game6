@@ -2,11 +2,11 @@
 <html lang="fa">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>بازی موانع</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css">
     <style>
-        /* Reset CSS */
+        /* Reset CSS - بدون تغییر */
         * {
             margin: 0;
             padding: 0;
@@ -17,25 +17,27 @@
         body {
             direction: rtl;
             text-align: center;
-            font-family: 'Vazir', Arial, sans-serif; /* فونت Vazir برای کل سایت */
+            font-family: 'Vazir', Arial, sans-serif;
             margin: 0;
             padding: 0;
             overflow: hidden;
-            touch-action: none; /* جلوگیری از زوم */
+            touch-action: manipulation; /* تغییر جزئی برای تجربه لمسی بهتر */
         }
 
         #game-container {
             position: relative;
             width: 100%;
             height: 100vh;
-            background-image: url('https://s33.picofile.com/file/8483483326/export202503191719321462.png'); /* تغییر پس‌زمینه به عکس مورد نظر */
-            background-size: cover; /* تنظیم اندازه عکس به اندازه صفحه */
-            background-position: center; /* تنظیم موقعیت عکس در مرکز صفحه */
+            height: calc(var(--vh, 1vh) * 100); /* اضافه شده برای دستگاه‌های موبایل */
+            background-image: url('https://s33.picofile.com/file/8483483326/export202503191719321462.png');
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
         }
 
         #character {
             position: absolute;
-            bottom: 120px; /* شخصیت به پایین صفحه منتقل شد و ۲۰ پیکسل فاصله گرفت */
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
             width: 50px;
@@ -70,7 +72,9 @@
             border-radius: 10px;
             text-align: center;
             display: none;
-            z-index: 1000; /* دیالوگ باخت جلوی همه چیز */
+            z-index: 1000;
+            width: 80%; /* اضافه شده برای نمایش بهتر در موبایل */
+            max-width: 400px; /* محدودیت عرض برای دستگاه‌های بزرگ */
         }
 
         #restart-button {
@@ -82,24 +86,25 @@
             cursor: pointer;
         }
 
-        /* استایل فوتر */
+        /* فوتر با تغییرات جزئی برای نمایش بهتر */
         #footer {
             position: fixed;
             bottom: 0;
             width: 100%;
-            background-color: #C6C6FF;
+            background-color: rgba(198, 198, 255, 0.9); /* اضافه شدن شفافیت */
             padding: 10px;
             text-align: center;
-            font-family: 'Vazir', Arial, sans-serif; /* فونت Vazir برای فوتر */
+            font-family: 'Vazir', Arial, sans-serif;
             border-top: 1px solid #ccc;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            z-index: 100;
         }
 
         #footer img {
-            width: 20px; /* اندازه لوگو */
+            width: 20px;
             height: 20px;
             border-radius: 50%;
         }
@@ -108,6 +113,19 @@
             margin: 0;
             font-size: 14px;
             color: #000;
+        }
+
+        /* تنظیمات برای دستگاه‌های بسیار کوچک */
+        @media (max-width: 400px) {
+            #character {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .obstacle {
+                width: 40px;
+                height: 70px;
+            }
         }
     </style>
 </head>
@@ -122,13 +140,13 @@
         </div>
     </div>
 
-    <!-- فوتر -->
     <div id="footer">
         <p>حقوق محفوظ است</p> 
         <img src="https://s33.picofile.com/file/8483389992/Picsart_25_03_12_05_24_26_172.jpg" alt="لوگو">
     </div>
 
     <script>
+        // منطق بازی دقیقاً مانند قبل بدون هیچ تغییری
         const gameContainer = document.getElementById('game-container');
         const character = document.getElementById('character');
         const scoreDisplay = document.getElementById('score');
@@ -140,7 +158,7 @@
         let gameInterval;
         let obstacleInterval;
         let isGameOver = false;
-        let obstacleSpeed = 5; // سرعت اولیه موانع
+        let obstacleSpeed = 5;
 
         const obstacleImages = [
             'https://s33.picofile.com/file/8483483250/IMG_%DB%B2%DB%B0%DB%B2%DB%B5%DB%B0%DB%B3%DB%B1%DB%B9_%DB%B1%DB%B9%DB%B1%DB%B5%DB%B3%DB%B7.png',
@@ -151,12 +169,12 @@
         function startGame() {
             score = 0;
             isGameOver = false;
-            obstacleSpeed = 5; // بازنشانی سرعت موانع
+            obstacleSpeed = 5;
             gameOverDisplay.style.display = 'none';
             scoreDisplay.textContent = `امتیاز: ${score}`;
             character.style.left = '50%';
 
-            gameInterval = setInterval(updateGame, 100); // هر ۱۰۰ میلی‌ثانیه ۱ امتیاز
+            gameInterval = setInterval(updateGame, 100);
             obstacleInterval = setInterval(createObstacle, 1000);
         }
 
@@ -166,11 +184,10 @@
             score++;
             scoreDisplay.textContent = `امتیاز: ${score}`;
 
-            // افزایش سرعت موانع بر اساس امتیاز
             if (score === 200) {
-                obstacleSpeed *= 2; // افزایش ۲۰ درصدی سرعت
+                obstacleSpeed *= 2;
             } else if (score === 500) {
-                obstacleSpeed *= 2; // افزایش ۲۰ درصدی دیگر
+                obstacleSpeed *= 2;
             }
         }
 
@@ -198,7 +215,7 @@
                 obstacle.style.top = `${obstacleTop + obstacleSpeed}px`;
 
                 if (obstacleTop > gameContainer.offsetHeight) {
-                    obstacle.remove(); // حذف مانع خارج شده از صفحه
+                    obstacle.remove();
                     clearInterval(obstacleInterval);
                 }
 
@@ -244,7 +261,6 @@
             }
         });
 
-        // توقف بازی هنگام خروج از صفحه
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 clearInterval(gameInterval);
@@ -256,6 +272,15 @@
                 }
             }
         });
+
+        // اضافه شده: تنظیم ارتفاع صحیح برای مرورگرهای موبایل
+        function setGameHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+
+        window.addEventListener('resize', setGameHeight);
+        setGameHeight();
 
         startGame();
     </script>
